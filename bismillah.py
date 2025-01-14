@@ -1,7 +1,6 @@
 import streamlit as st
 from docx import Document
-import win32com.client
-import pythoncom  # Import pythoncom untuk CoInitialize
+import pypandoc
 import os
 
 # Fungsi untuk mengganti placeholder dalam template Word
@@ -26,20 +25,19 @@ def fill_template(template_path, output_docx_path, data):
     doc.save(output_docx_path)  # Menyimpan dokumen yang telah diubah ke path baru
     return output_docx_path
 
-# Fungsi untuk mengonversi Word ke PDF menggunakan Microsoft Word
+# Fungsi untuk mengonversi Word ke PDF menggunakan pypandoc (kompatibel di Streamlit Cloud)
 def convert_to_pdf(input_docx_path, output_pdf_path):
-    pythoncom.CoInitialize()  # Memanggil CoInitialize sebelum menggunakan win32com
-    
-    # Verifikasi apakah file Word ada
-    if not os.path.exists(input_docx_path):
-        raise FileNotFoundError(f"File {input_docx_path} tidak ditemukan.")
-    
-    # Menggunakan Microsoft Word untuk konversi ke PDF
-    word = win32com.client.Dispatch("Word.Application")
-    doc = word.Documents.Open(input_docx_path)
-    doc.SaveAs(output_pdf_path, FileFormat=17)  # 17 adalah format PDF di Word
-    doc.Close()
-    word.Quit()
+    """
+    Mengonversi dokumen Word ke PDF menggunakan pypandoc.
+
+    Args:
+    - input_docx_path (str): Path ke file Word.
+    - output_pdf_path (str): Path untuk menyimpan PDF.
+
+    Returns:
+    - str: Path ke file PDF hasil.
+    """
+    output = pypandoc.convert_file(input_docx_path, 'pdf', outputfile=output_pdf_path)
     return output_pdf_path
 
 # Streamlit UI
@@ -73,13 +71,13 @@ if submit:
         "pukul": pukul,
         "tempat_kegiatan": tempat_kegiatan,
         "kota_ttd": kota_ttd,
-        "tanggal_ttd" : tanggal_ttd
+        "tanggal_ttd": tanggal_ttd
     }
 
     # Path file template, hasil Word, dan hasil PDF
-    template_path = r"D:\KP\BAP-Abdimas-Nareks-template.docx"  # Ganti dengan path template yang benar
-    output_docx_path = r"D:\KP\berita_acara_filled.docx"  # Path output file Word yang sudah terisi
-    output_pdf_path = r"D:\KP\berita_acara_filled.pdf"  # Path output file PDF
+    template_path = "BAP-Abdimas-Nareks-template.docx"  # Path relatif template
+    output_docx_path = "berita_acara_filled.docx"  # Path relatif untuk file Word yang sudah terisi
+    output_pdf_path = "berita_acara_filled.pdf"  # Path relatif untuk file PDF
 
     # Isi template Word
     filled_docx = fill_template(template_path, output_docx_path, data)
@@ -93,9 +91,4 @@ if submit:
         with open(filled_pdf, "rb") as file:
             st.download_button(
                 label="Download Berita Acara (PDF)",
-                data=file,
-                file_name="berita_acara_filled.pdf",
-                mime="application/pdf"
-            )
-    else:
-        st.error(f"File Word {output_docx_path} tidak berhasil disimpan. Periksa kembali path atau template.")
+             
